@@ -40,8 +40,13 @@
                 Papa.parse(data, {
                     complete: function(results) {
                         words = results.data.filter(row => row.length > 1); // حذف ردیف‌های خالی
-                        learnedStatus = new Array(words.length).fill(false); // مقداردهی اولیه به false
-                        localStorage.setItem('learnedStatus', JSON.stringify(learnedStatus)); // ذخیره وضعیت یادگیری در حافظه
+                        
+                        // در صورتی که learnedStatus مقداردهی نشده باشد، آن را به تعداد کلمات مقداردهی می‌کنیم
+                        if (learnedStatus.length !== words.length) {
+                            learnedStatus = new Array(words.length).fill(false); // مقداردهی اولیه به false
+                            localStorage.setItem('learnedStatus', JSON.stringify(learnedStatus)); // ذخیره وضعیت یادگیری در حافظه
+                        }
+
                         updateCard(); // نمایش اولین کارت
                         document.getElementById("next").disabled = false;
                         document.getElementById("confirm-button").disabled = false;
@@ -53,12 +58,14 @@
                 document.getElementById("card").innerText = 'خطا در بارگذاری فایل';
             });
 
+        // کلیک بر روی کارت برای نمایش معنی یا کلمه
         document.getElementById("card").addEventListener("click", function() {
             if (words.length === 0) return;
             showMeaning = !showMeaning;
             updateCard();
         });
 
+        // دکمه قبلی
         document.getElementById("prev").addEventListener("click", function() {
             if (currentIndex > 0) {
                 currentIndex--;
@@ -67,6 +74,7 @@
             }
         });
 
+        // دکمه بعدی
         document.getElementById("next").addEventListener("click", function() {
             if (currentIndex < words.length - 1) {
                 currentIndex++;
@@ -75,16 +83,19 @@
             }
         });
 
+        // دکمه یاد گرفتم
         document.getElementById("confirm-button").addEventListener("click", function() {
             learnedStatus[currentIndex] = true;
             localStorage.setItem('learnedStatus', JSON.stringify(learnedStatus)); // ذخیره وضعیت یادگیری در حافظه
             updateCard();
         });
 
+        // به‌روزرسانی کارت (کلمه و وضعیت یادگیری)
         function updateCard() {
             const card = document.getElementById("card");
             const status = document.getElementById("status");
 
+            // نمایش کلمه یا معنی
             if (!showMeaning) {
                 card.innerText = words[currentIndex][0]; // نمایش کلمه (ستون اول)
             } else {
@@ -94,6 +105,7 @@
             // نمایش وضعیت یادگیری
             status.innerText = learnedStatus[currentIndex] ? "✅ یاد گرفته شد" : "❌ یاد نگرفته";
 
+            // غیرفعال کردن دکمه‌ها در صورت رسیدن به ابتدا یا انتهای لیست
             document.getElementById("prev").disabled = (currentIndex === 0);
             document.getElementById("next").disabled = (currentIndex === words.length - 1);
         }
