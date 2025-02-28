@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فلش کارت واژگان</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #card { width: 300px; height: 200px; margin: 20px auto; display: flex; 
+                align-items: center; justify-content: center; 
+                border: 2px solid #333; border-radius: 10px; 
+                cursor: pointer; font-size: 20px; background: #f8f8f8; }
+        #nav-buttons, #confirm-button { margin-top: 10px; }
+        button { padding: 10px; font-size: 16px; margin: 5px; cursor: pointer; }
+        #status { font-size: 18px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>فلش کارت واژگان</h2>
+    <input type="file" id="fileInput" accept=".csv">
+    <div id="card">لطفاً فایل CSV خود را بارگذاری کنید</div>
+    
+    <div id="status"></div> <!-- نمایش وضعیت یادگیری -->
+    
+    <div id="nav-buttons">
+        <button id="prev" disabled>⬅ قبلی</button>
+        <button id="confirm-button" disabled>✅ یاد گرفتم</button>
+        <button id="next" disabled>بعدی ➡</button>
+    </div>
+
+    <script>
+        let words = [];  // آرایه‌ای برای ذخیره داده‌های CSV
+        let learnedStatus = []; // ذخیره وضعیت یادگیری
+        let currentIndex = 0;
+        let showMeaning = false;
+
+        document.getElementById("fileInput").addEventListener("change", function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                complete: function(results) {
+                    words = results.data.filter(row => row.length > 1); // حذف ردیف‌های خالی
+                    learnedStatus = new Array(words.length).fill(false); // مقداردهی اولیه به false
+                    if (words.length > 0) {
+                        currentIndex = 0;
+                        updateCard();
+                        document.getElementById("next").disabled = false;
+                        document.getElementById("confirm-button").disabled = false;
+                    }
+                },
+                skipEmptyLines: true
+            });
+        });
+
+        document.getElementById("card").addEventListener("click", function() {
+            if (words.length === 0) return;
+            showMeaning = !showMeaning;
+            updateCard();
+        });
+
+        document.getElementById("prev").addEventListener("click", function() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showMeaning = false;
+                updateCard();
+            }
+        });
+
+        document.getElementById("next").addEventListener("click", function() {
+            if (currentIndex < words.length - 1) {
+                currentIndex++;
+                showMeaning = false;
+                updateCard();
+            }
+        });
+
+        document.getElementById("confirm-button").addEventListener("click", function() {
+            learnedStatus[currentIndex] = true;
+            updateCard();
+        });
+
+        function updateCard() {
+            const card = document.getElementById("card");
+            const status = document.getElementById("status");
+
+            if (!showMeaning) {
+                card.innerText = words[currentIndex][0]; // نمایش کلمه (ستون اول)
+            } else {
+                card.innerText = words[currentIndex].join("\n"); // نمایش همه اطلاعات سطر
+            }
+
+            // نمایش وضعیت یادگیری
+            status.innerText = learnedStatus[currentIndex] ? "✅ یاد گرفته شد" : "❌ یاد نگرفته";
+
+            document.getElementById("prev").disabled = (currentIndex === 0);
+            document.getElementById("next").disabled = (currentIndex === words.length - 1);
+        }
+    </script>
+
+</body>
+</html>
