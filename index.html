@@ -19,11 +19,8 @@
 <body>
 
     <h2>فلش کارت واژگان</h2>
-    <input type="file" id="fileInput" accept=".csv">
-    <div id="card">لطفاً فایل CSV خود را بارگذاری کنید</div>
-    
-    <div id="status"></div> <!-- نمایش وضعیت یادگیری -->
-    
+    <div id="card">در حال بارگذاری فایل...</div>
+    <div id="status"></div>
     <div id="nav-buttons">
         <button id="prev" disabled>⬅ قبلی</button>
         <button id="confirm-button" disabled>✅ یاد گرفتم</button>
@@ -31,29 +28,30 @@
     </div>
 
     <script>
-        let words = [];  // آرایه‌ای برای ذخیره داده‌های CSV
-        let learnedStatus = []; // ذخیره وضعیت یادگیری
+        let words = []; // آرایه‌ای برای ذخیره داده‌های CSV
+        let learnedStatus = JSON.parse(localStorage.getItem('learnedStatus')) || []; // وضعیت یادگیری از حافظه
         let currentIndex = 0;
         let showMeaning = false;
 
-        document.getElementById("fileInput").addEventListener("change", function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            Papa.parse(file, {
-                complete: function(results) {
-                    words = results.data.filter(row => row.length > 1); // حذف ردیف‌های خالی
-                    learnedStatus = new Array(words.length).fill(false); // مقداردهی اولیه به false
-                    if (words.length > 0) {
-                        currentIndex = 0;
-                        updateCard();
+        // بارگذاری فایل a.csv از سرور محلی
+        fetch('a.csv')
+            .then(response => response.text())
+            .then(data => {
+                Papa.parse(data, {
+                    complete: function(results) {
+                        words = results.data.filter(row => row.length > 1); // حذف ردیف‌های خالی
+                        learnedStatus = new Array(words.length).fill(false); // مقداردهی اولیه به false
+                        localStorage.setItem('learnedStatus', JSON.stringify(learnedStatus)); // ذخیره وضعیت یادگیری در حافظه
+                        updateCard(); // نمایش اولین کارت
                         document.getElementById("next").disabled = false;
                         document.getElementById("confirm-button").disabled = false;
                     }
-                },
-                skipEmptyLines: true
+                });
+            })
+            .catch(error => {
+                console.error('خطا در بارگذاری فایل:', error);
+                document.getElementById("card").innerText = 'خطا در بارگذاری فایل';
             });
-        });
 
         document.getElementById("card").addEventListener("click", function() {
             if (words.length === 0) return;
@@ -79,6 +77,7 @@
 
         document.getElementById("confirm-button").addEventListener("click", function() {
             learnedStatus[currentIndex] = true;
+            localStorage.setItem('learnedStatus', JSON.stringify(learnedStatus)); // ذخیره وضعیت یادگیری در حافظه
             updateCard();
         });
 
@@ -89,7 +88,7 @@
             if (!showMeaning) {
                 card.innerText = words[currentIndex][0]; // نمایش کلمه (ستون اول)
             } else {
-                card.innerText = words[currentIndex].join("\n"); // نمایش همه اطلاعات سطر
+                card.innerText = words[currentIndex].join("\n"); // نمایش معنی (ستون دوم)
             }
 
             // نمایش وضعیت یادگیری
